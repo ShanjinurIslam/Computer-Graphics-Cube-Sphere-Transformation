@@ -10,7 +10,14 @@
 #include <GLUT/GLUT.h>
 #include <cmath>
 
-double angle,height,increment ;
+double angle,increment ;
+double cubeSide, sphereRadius ;
+
+//all translation combinations 2^3 = 8
+int X[] = {1,-1,-1,1,1,-1,-1,1} ;
+int Y[] = {1,1,-1,-1,1,1,-1,-1} ;
+int Z[] = {1,1,1,1,-1,-1,-1,-1} ;
+
 
 class Point{
 public:
@@ -70,60 +77,151 @@ void init(){
     l = Point(-1/(sqrt(2)),-1/sqrt(2),0) ;
     r = Point(-1/(sqrt(2)),1/sqrt(2),0) ;
     angle = acos(-1.0)/30 ; //3 degree angle change
-    height = 80 ;
     increment = 5 ;
+    cubeSide = 50 ;
+    sphereRadius = 10 ;
+    
     glClearColor(0,0,0,0) ;
     glMatrixMode(GL_PROJECTION) ;
     glLoadIdentity() ;
     gluPerspective(80,1,1,1000.0) ;
+    
 }
 
 
 void sphereComponent(double radius,int slices,int stacks,int q){
+    glPushMatrix();
+        glRotatef(90*(q%4),0,0,1);
+        struct Point p[stacks+2][slices+2];
+        double h,r,angle1,angle2;
+        for(int i=0;i<=stacks;i++)
+        {
+            angle1=((double)i/(double)stacks)*(acos(-1.0)/2);
+            h=radius*sin(angle1);
+            r=radius*cos(angle1);
+            for(int j=0;j<=slices;j++)
+            {
+                angle2=((double)j/(double)slices)*acos(-1.0)/2;
+                p[i][j].x=r*cos(angle2);
+                p[i][j].y=r*sin(angle2);
+                p[i][j].z=h*(q>=4?-1:1);
+            }
+        }
+        for(int i=0;i<stacks;i++)
+        {
+            glColor3f(1,0,0);
+            for(int j=0;j<slices;j++)
+            {
+                glBegin(GL_QUADS);{
+                    glVertex3f(p[i][j].x,p[i][j].y,p[i][j].z);
+                    glVertex3f(p[i][j+1].x,p[i][j+1].y,p[i][j+1].z);
+                    glVertex3f(p[i+1][j+1].x,p[i+1][j+1].y,p[i+1][j+1].z);
+                    glVertex3f(p[i+1][j].x,p[i+1][j].y,p[i+1][j].z);
+                }glEnd();
+            }
+        }
+    glPopMatrix();
+}
+
+void cylinderComponent(double radius,double height,int segments,int q){
+    
     glPushMatrix() ;
-    double angle1,angle2,h,r ;
-    Point p[slices+2][stacks+2] ;
-    
-    for(int i=0;i<=stacks;i++){
-        angle1 = (1.0*i/(1.0*stacks)) * acos(-1.0) * 0.5 ;
-        h = radius*sin(angle1) ;
-        r = radius*cos(angle1) ;
-        for(int j=0;j<=slices;j++){
-            angle2 = (1.0*i/(1.0*slices)) * acos(-1.0) * 0.5 ;
-            p[i][j].x = r*cos(angle2) ;
-            p[i][j].y = r*sin(angle2) ;
-            p[i][j].z = h*(q>=4?1:-1);
-        }
+    glRotatef(90*q,0,0,1) ;
+    Point p[segments+2] ;
+    double angle ;
+    double h = height / 2 ;
+    for(int i=0;i<=segments;i++){
+        angle = ((1.0*i)/(1.0*segments))*acos(-1.0)*0.5 ;
+        p[i].x = radius*cos(angle) ;
+        p[i].y = radius*sin(angle) ;
+        p[i].z = h ;
     }
     
-    for(int i=0;i<stacks;i++){
+    for(int i=0;i<segments;i++){
         
-        for(int j=0;j<slices;j++){
-            glBegin(GL_QUADS) ;
-            
-            glVertex3f(p[i][j].x, p[i][j].y, p[i][j].z) ;
-            glVertex3f(p[i][j+1].x, p[i][j+1].y, p[i][j+1].z) ;
-            glVertex3f(p[i+1][j+1].x, p[i+1][j+1].y, p[i+1][j+1].z) ;
-            glVertex3f(p[i][j+1].x, p[i][j+1].y, p[i][j+1].z) ;
-            
-            glEnd() ;
-        }
+        glBegin(GL_TRIANGLES) ;
+        
+        glVertex3f(0,0,h) ;
+        glVertex3f(p[i].x,p[i].y,p[i].z) ;
+        glVertex3f(p[i+1].x,p[i+1].y,p[i+1].z) ;
+    
+        glEnd() ;
+        
+        
+        glBegin(GL_QUADS) ;
+        
+        glVertex3f(p[i].x,p[i].y,p[i].z) ;
+        glVertex3f(p[i+1].x,p[i+1].y,p[i+1].z) ;
+        glVertex3f(p[i+1].x,p[i+1].y,-p[i+1].z) ;
+        glVertex3f(p[i].x,p[i].y,-p[i].z) ;
+        
+        glEnd() ;
     }
+    
     glPopMatrix() ;
 }
 
-void sphere(double r,int slices,int stacks){
+void square(double a){
+    a = a/2 ;
+    glBegin(GL_QUADS) ;
+    glVertex3f(a,a,0) ;
+    glVertex3f(a,-a,0) ;
+    glVertex3f(-a,-a,0) ;
+    glVertex3f(-a,a,0) ;
+    glEnd() ;
+}
+
+void CubeSphere(double side,double radius,int segments){
+    glPushMatrix() ;
+    double a = side/2 ;
+    a = a - radius ;
+    
     for(int i=0;i<8;i++){
-        sphereComponent(r,slices,stacks,i) ;
+        glPushMatrix() ;
+        glTranslatef(a*X[i],a*Y[i],a*Z[i]) ;
+        sphereComponent(radius,segments,segments,i) ;
+        glPopMatrix() ;
     }
-}
-
-void cylinderComponent(){
     
-}
-
-void CubeSphere(){
+    for(int i=0;i<=2;i++){
+        if(i==1) glRotatef(90,1,0,0) ;
+        if(i==2) glRotatef(90,0,1,0) ;
+        
+        for(int j=0;j<4;j++){
+            glPushMatrix() ;
+            glColor3f(0,1,0) ;
+            glTranslatef(a*X[j],a*Y[j],0) ;
+            cylinderComponent(radius,a*2,segments,j) ;
+            glPopMatrix() ;
+            glClearColor(0,0,0,0) ;
+        }
+        
+        if(i==1) glRotatef(-90,1,0,0) ;
+        if(i==2) glRotatef(-90,0,1,0) ;
+    }
     
+    a = a + radius ;
+    
+    glPushMatrix() ;
+    glColor3f(1,1,1) ;
+    double s = 2*(a-radius) ;
+    
+    for(int i=0;i<4;i++){
+        glPushMatrix() ;
+        glRotatef(90*i,0,0,1) ;
+        glTranslatef(a, 0, 0) ;
+        glRotatef(90,0,1,0) ;
+        square(s) ;
+        glPopMatrix() ;
+     }
+     glTranslatef(0, 0, a) ;
+     square(s) ;
+     glTranslatef(0, 0, -2*a) ;
+     square(s) ;
+    
+    glPopMatrix() ;
+    
+    glPopMatrix() ;
 }
 
 
@@ -140,6 +238,7 @@ void display(){
     
     glPushMatrix();
     drawAxes() ;
+    CubeSphere(cubeSide,sphereRadius,20) ;
     glPopMatrix();
     
     glutSwapBuffers() ;
@@ -162,6 +261,11 @@ void keyboardListener(unsigned char key,int x,int y){
      */
     
     switch (key) {
+            
+        case 'w': if(sphereRadius<cubeSide/2) sphereRadius++ ;
+            break ;
+        case 's': if(sphereRadius>0) sphereRadius-- ;
+            break ;
         case '1':
             r.x = r.x*cos(-1.0*angle) + l.x*sin(-1.0*angle) ;
             r.y = r.y*cos(-1.0*angle) + l.y*sin(-1.0*angle) ;
