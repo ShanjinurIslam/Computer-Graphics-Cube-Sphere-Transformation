@@ -75,17 +75,10 @@ void drawAxes()
 
 void init()
 {
-    //upper side
     corner[0] = Point(1, 1, 1);
     corner[1] = Point(-1, 1, 1);
     corner[2] = Point(-1, -1, 1);
     corner[3] = Point(1, -1, 1);
-
-    //lower side
-    corner[4] = Point(1, 1, -1);
-    corner[5] = Point(-1, 1, -1);
-    corner[6] = Point(-1, -1, -1);
-    corner[7] = Point(1, -1, -1);
 
     pos = Point(100, 100, 0);
     u = Point(0, 0, 1); //z axis is up vector
@@ -102,11 +95,9 @@ void init()
     gluPerspective(80, 1, 1, 1000.0);
 }
 
-void sphereComponent(double radius, int slices, int stacks, int q)
+void sphereComponent(double radius, int slices, int stacks)
 {
-    glPushMatrix();
-    glRotatef(90 * (q % 4), 0, 0, 1);
-    struct Point p[stacks + 2][slices + 2];
+    Point p[stacks + 1][slices + 1];
     double h, r, angle1, angle2;
     for (int i = 0; i <= stacks; i++)
     {
@@ -118,7 +109,7 @@ void sphereComponent(double radius, int slices, int stacks, int q)
             angle2 = ((double)j / (double)slices) * acos(-1.0) / 2;
             p[i][j].x = r * cos(angle2);
             p[i][j].y = r * sin(angle2);
-            p[i][j].z = h * (q >= 4 ? -1 : 1);
+            p[i][j].z = h  ;
         }
     }
     for (int i = 0; i < stacks; i++)
@@ -139,12 +130,10 @@ void sphereComponent(double radius, int slices, int stacks, int q)
     glPopMatrix();
 }
 
-void cylinderComponent(double radius, double height, int segments, int q)
+void cylinderComponent(double radius, double height, int segments)
 {
-
     glPushMatrix();
-    glRotatef(90 * q, 0, 0, 1);
-    Point p[segments + 2];
+    Point p[segments + 1];
     double angle;
     for (int i = 0; i <= segments; i++)
     {
@@ -178,7 +167,7 @@ void cylinderComponent(double radius, double height, int segments, int q)
     glPopMatrix();
 }
 
-void square(double a)
+void CubeSide(double a)
 {
     a = a / 2;
     glBegin(GL_QUADS);
@@ -194,36 +183,77 @@ void CubeSphere(double side, double radius, int segments)
     glPushMatrix();
     double a = (side / 2) - radius ;
 
-    for (int i = 0; i < 8; i++)
+    glPushMatrix() ;
+    
+    for (int i = 0; i < 4; i++)
     {
         glPushMatrix();
         glTranslatef(a * corner[i].x, a * corner[i].y, a * corner[i].z);
-        sphereComponent(radius, segments, segments, i);
+        glRotatef(90 * i, 0, 0, 1);
+        sphereComponent(radius, segments, segments);
         glPopMatrix();
     }
-
-    for (int i = 0; i < 3; i++)
+    
+    glPopMatrix() ;
+    
+    glPushMatrix() ;
+    
+    for (int i = 0; i < 4; i++)
     {
-        if (i == 1)
-            glRotatef(90, 1, 0, 0);
-        if (i == 2)
-            glRotatef(90, 0, 1, 0);
-
-        for (int q = 0; q < 4; q++)
-        {
-            glPushMatrix();
-            glColor3f(0, 1, 0);
-            glTranslatef(a * corner[q].x, a * corner[q].y, 0);
-            cylinderComponent(radius, a, segments, q);
-            glPopMatrix();
-            glClearColor(0, 0, 0, 0);
-        }
-
-        if (i == 1)
-            glRotatef(-90, 1, 0, 0);
-        if (i == 2)
-            glRotatef(-90, 0, 1, 0);
+        glPushMatrix();
+        glRotated(180,1, 0, 0) ;
+        glTranslatef(a * corner[i].x, a * corner[i].y, a * corner[i].z);
+        glRotatef(90 * i, 0, 0, 1);
+        sphereComponent(radius, segments, segments);
+        glPopMatrix();
     }
+    
+    glPopMatrix() ;
+
+    glPushMatrix() ;
+    
+    for (int q = 0; q < 4; q++)
+    {
+        glPushMatrix();
+        glColor3f(0, 1, 0);
+        glTranslatef(a * corner[q].x, a * corner[q].y, 0);
+        glRotatef(90 * q, 0, 0, 1);
+        cylinderComponent(radius, a, segments);
+        glPopMatrix();
+    }
+    
+    glPopMatrix() ;
+    
+    glPushMatrix() ;
+    
+    for (int q = 0; q < 4; q++)
+    {
+        glPushMatrix();
+        glColor3f(0, 1, 0);
+        glRotatef(90, 1, 0, 0);
+        glTranslatef(a * corner[q].x, a * corner[q].y, 0);
+        glRotatef(90 * q, 0, 0, 1);
+        cylinderComponent(radius, a, segments);
+        glPopMatrix();
+    }
+    
+    glPopMatrix() ;
+    
+    glPushMatrix() ;
+    
+    for (int q = 0; q < 4; q++)
+    {
+        glPushMatrix();
+        glColor3f(0, 1, 0);
+        
+        glRotatef(90, 0, 1, 0);
+        glTranslatef(a * corner[q].x, a * corner[q].y, 0);
+        glRotatef(90 * q, 0, 0, 1);
+        cylinderComponent(radius, a, segments);
+        glPopMatrix();
+    }
+    
+    glPopMatrix() ;
     
     
     glPushMatrix();
@@ -233,11 +263,11 @@ void CubeSphere(double side, double radius, int segments)
     glPushMatrix() ;
     //upper side
     glTranslatef(0, 0, side/2);
-    square(s);
+    CubeSide(s);
     
     //lower side
     glTranslatef(0, 0, -side);
-    square(s);
+    CubeSide(s);
     glPopMatrix();
 
     for (int i = 0; i < 4; i++)
@@ -246,7 +276,7 @@ void CubeSphere(double side, double radius, int segments)
         glRotatef(90 * i, 0, 0, 1);
         glTranslatef(side/2, 0, 0);
         glRotatef(90, 0, 1, 0);
-        square(s);
+        CubeSide(s);
         glPopMatrix();
     }
     
@@ -281,7 +311,6 @@ void animate()
 }
 void keyboardListener(unsigned char key, int x, int y)
 {
-
     /*
      U
      |
